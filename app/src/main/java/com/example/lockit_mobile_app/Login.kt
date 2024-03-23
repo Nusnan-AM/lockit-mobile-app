@@ -47,9 +47,9 @@ class Login : AppCompatActivity() {
 
     private lateinit var loading: ProgressBar
 
-//    private val getURL: String = "https://reqres.in/api/users"
+    val loadingAlert = LoadingAlert(this)
 
-    private val getURL: String = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/login"
+    private val getURL: String = "https://lockit-backend-api.onrender.com/api/users/login"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,35 +80,26 @@ class Login : AppCompatActivity() {
         client = OkHttpClient()
 
         buttonSignIn.setOnClickListener{
-            loading.visibility = View.VISIBLE
+
             val email = editTextEmail.text.toString()
             val password = editTextPassword.text.toString()
 
 
             if (!isNetworkAvailable()) {
                 Toast.makeText(this@Login, "No internet connection", Toast.LENGTH_SHORT).show()
-
-                loading.visibility = View.GONE
-
                 return@setOnClickListener
             }
 
             if (email.isEmpty() || !Utils.isValidEmail(email)) {
                 Toast.makeText(this@Login, "Enter a valid email address", Toast.LENGTH_SHORT).show()
-
-                loading.visibility = View.GONE
-
                 return@setOnClickListener
             }
 
             if (password.isEmpty()) {
                 Toast.makeText(this@Login, "Password can't be empty", Toast.LENGTH_SHORT).show()
-
-                loading.visibility = View.GONE
-
                 return@setOnClickListener
             }
-
+            loadingAlert.startLoading()
             signIn(email, password)
         }
 
@@ -212,14 +203,14 @@ class Login : AppCompatActivity() {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
                 runOnUiThread {
-                    loading.visibility = View.GONE
+                    loadingAlert.stopLoading()
                     Toast.makeText(this@Login, "Something went wrong", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 runOnUiThread {
-                    loading.visibility = View.GONE
+                    loadingAlert.stopLoading()
                     try {
 
                         val jsonResponse = response.body?.string()
@@ -232,7 +223,7 @@ class Login : AppCompatActivity() {
                         if (jsonObject.getBoolean("status")) {
                             // If status is true, parse user details from response
                             val userObject = jsonObject.getJSONObject("user")
-                            val userId = userObject.getLong("id")
+                            val userId = userObject.getString("_id")
                             val username = userObject.getString("username")
                             val email = userObject.getString("email")
                             val phoneNumber = userObject.getString("phoneNumber")
@@ -240,7 +231,7 @@ class Login : AppCompatActivity() {
                             // Store user details in SharedPreferences
                             val sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                             val editor = sharedPreferences.edit()
-                            editor.putLong("userId", userId)
+                            editor.putString("userId", userId)
                             editor.putString("username", username)
                             editor.putString("email", email)
                             editor.putString("phoneNumber", phoneNumber)
@@ -258,10 +249,12 @@ class Login : AppCompatActivity() {
                         // Handle JSON parsing error
                         Log.e("JSONException", "Error parsing JSON response", e)
                         Toast.makeText(this@Login, "Error parsing JSON response", Toast.LENGTH_SHORT).show()
+                        loadingAlert.stopLoading()
                     } catch (e: IOException) {
                         // Handle IO error
                         Log.e("IOException", "Error reading response body", e)
                         Toast.makeText(this@Login, "Error reading response body", Toast.LENGTH_SHORT).show()
+                        loadingAlert.stopLoading()
                     }
                 }
             }

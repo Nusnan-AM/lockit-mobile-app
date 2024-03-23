@@ -31,6 +31,9 @@ class PasswordEdite : AppCompatActivity() {
 
     private lateinit var cancelButton: Button
     private lateinit var saveChangesButton: Button
+
+    val loadingAlert = LoadingAlert(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.password_edite)
@@ -76,7 +79,7 @@ class PasswordEdite : AppCompatActivity() {
                 Toast.makeText(this@PasswordEdite, "Enter a valid email address", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
+            loadingAlert.startLoading()
             save(currentPassword,newPassword,email.toString())
         }
 
@@ -115,16 +118,18 @@ class PasswordEdite : AppCompatActivity() {
             .add("newPassword", newPassword)
             .build()
 
-        val postURL = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/user-change-password"
+        val putURL = "https://lockit-backend-api.onrender.com/api/users/change-password"
 
-        val request = Request.Builder().url(postURL).put(requestBody).build()
+        val request = Request.Builder().url(putURL).put(requestBody).build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
                 runOnUiThread {
                     Toast.makeText(this@PasswordEdite, "Something went wrong", Toast.LENGTH_SHORT).show()
+                    loadingAlert.stopLoading()
                 }
+
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -135,6 +140,7 @@ class PasswordEdite : AppCompatActivity() {
 
                         if (jsonResponse.isNullOrEmpty()) {
                             Toast.makeText(this@PasswordEdite, "Empty response", Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                             return@runOnUiThread
                         }
 
@@ -143,14 +149,17 @@ class PasswordEdite : AppCompatActivity() {
 
                         if (status) {
                             Toast.makeText(this@PasswordEdite, jsonObject.getString("message"), Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                             val intent = Intent(applicationContext, Profile::class.java)
                             startActivity(intent)
                             finish()
                         } else {
                             Toast.makeText(this@PasswordEdite, jsonObject.getString("message"), Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                         }
                     } catch (e: IOException) {
                         throw RuntimeException(e)
+                        loadingAlert.stopLoading()
                     }
                 }
             }

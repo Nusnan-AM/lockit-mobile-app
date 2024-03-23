@@ -28,6 +28,8 @@ class EditProfile : AppCompatActivity() {
     private lateinit var cancelButton: Button
     private lateinit var saveChangesButton: Button
 
+    val loadingAlert = LoadingAlert(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.edit_profile)
@@ -44,7 +46,7 @@ class EditProfile : AppCompatActivity() {
         val username = sharedPreferences.getString("username", "")
         val email = sharedPreferences.getString("email", "")
         val phone = sharedPreferences.getString("phoneNumber", "")
-        val id = sharedPreferences.getLong("userId", 0L)
+        val id = sharedPreferences.getString("userId", "")
 
         // Display username in TextView
         welcomUsernameTextView.text = "hi, $username"
@@ -85,6 +87,7 @@ class EditProfile : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            loadingAlert.startLoading()
             save(username, email, phoneNumber, id.toString())
         }
     }
@@ -122,15 +125,16 @@ class EditProfile : AppCompatActivity() {
             .add("phoneNumber", phoneNumber)
             .build()
 
-        val postURL = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/user/$id"
+        val putURL = "https://lockit-backend-api.onrender.com/api/users/$id/profile"
 
-        val request = Request.Builder().url(postURL).put(requestBody).build()
+        val request = Request.Builder().url(putURL).put(requestBody).build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
                 runOnUiThread {
                     Toast.makeText(this@EditProfile, "Something went wrong", Toast.LENGTH_SHORT).show()
+                    loadingAlert.stopLoading()
                 }
             }
 
@@ -142,6 +146,7 @@ class EditProfile : AppCompatActivity() {
 
                         if (jsonResponse.isNullOrEmpty()) {
                             Toast.makeText(this@EditProfile, "Empty response", Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                             return@runOnUiThread
                         }
 
@@ -163,15 +168,18 @@ class EditProfile : AppCompatActivity() {
                             editor.apply()
 
                             Toast.makeText(this@EditProfile, jsonObject.getString("message"), Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                             val intent = Intent(applicationContext, Profile::class.java)
                             startActivity(intent)
                             finish()
                         } else {
                             Toast.makeText(this@EditProfile, jsonObject.getString("message"), Toast.LENGTH_SHORT).show()
                             Toast.makeText(this@EditProfile, id, Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                         }
                     } catch (e: IOException) {
                         throw RuntimeException(e)
+                        loadingAlert.stopLoading()
                     }
                 }
             }

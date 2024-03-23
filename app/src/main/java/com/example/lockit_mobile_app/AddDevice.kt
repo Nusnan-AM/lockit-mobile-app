@@ -28,6 +28,9 @@ class AddDevice : AppCompatActivity() {
 
     private lateinit var backButton: Button
     private lateinit var addDeviceButton: Button
+
+    val loadingAlert = LoadingAlert(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.add_device)
@@ -45,23 +48,28 @@ class AddDevice : AppCompatActivity() {
 
         // Retrieve user details from SharedPreferences
         val sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-        val id = sharedPreferences.getLong("userId", 0L)
+        val id = sharedPreferences.getString("userId", "")
+        val user = sharedPreferences.getString("email", "")
 
         addDeviceButton.setOnClickListener{
             val deviceId = deviceIdEditText.text.toString()
-            val ownerID = id.toString()
+            val user = user.toString()
+
+            loadingAlert.startLoading()
 
             if (!isNetworkAvailable()) {
                 Toast.makeText(this@AddDevice, "No internet connection", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
+                loadingAlert.stopLoading()
             }
 
             if (deviceId.isEmpty()) {
                 Toast.makeText(this@AddDevice, "deviceID can't be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
+                loadingAlert.stopLoading()
             }
 
-            add(deviceId, ownerID)
+            add(deviceId, user)
         }
 
     }
@@ -92,11 +100,11 @@ class AddDevice : AppCompatActivity() {
         return isConnected
     }
 
-    private fun add(deviceId: String, ownerID: String) {
+    private fun add(deviceId: String, user: String) {
 
-        val postURL = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/device/$deviceId"
+        val getURL = "https://lockit-backend-api.onrender.com/api/devices/$deviceId"
 
-        val request = Request.Builder().url(postURL).get().build()
+        val request = Request.Builder().url(getURL).get().build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -104,6 +112,7 @@ class AddDevice : AppCompatActivity() {
                 runOnUiThread {
                     Toast.makeText(this@AddDevice, "Something went wrong", Toast.LENGTH_SHORT)
                         .show()
+                    loadingAlert.stopLoading()
                 }
             }
 
@@ -117,6 +126,7 @@ class AddDevice : AppCompatActivity() {
                             Toast.makeText(this@AddDevice, "Empty response", Toast.LENGTH_SHORT)
                                 .show()
                             return@runOnUiThread
+                            loadingAlert.stopLoading()
                         }
 
                         val jsonObject = JSONObject(jsonResponse)
@@ -126,18 +136,18 @@ class AddDevice : AppCompatActivity() {
 
                             // If owner match is true, parse user details from response
                             val deiveObject = jsonObject.getJSONObject("device")
-                            val deviceId = deiveObject.getLong("deviceID")
-                            val ownerId = deiveObject.getLong("owner")
+                            val deviceId = deiveObject.getString("deviceID")
+                            val owner = deiveObject.getString("owner")
                             val state = deiveObject.getBoolean("status")
                             val active = deiveObject.getBoolean("active")
 
-                            if(ownerID == ownerId.toString()){
+                            if(user == owner.toString()){
 
                             // Store user details in SharedPreferences
                             val sharedPreferences = getSharedPreferences("MyDevice", Context.MODE_PRIVATE)
                             val editor = sharedPreferences.edit()
-                            editor.putLong("deviceID", deviceId)
-                            editor.putLong("owner", ownerId)
+                            editor.putString("deviceID", deviceId)
+                            editor.putString("owner", owner)
                             editor.putBoolean("status", state)
                             editor.putBoolean("active", active)
                             editor.apply()
@@ -147,6 +157,7 @@ class AddDevice : AppCompatActivity() {
                                 "device successfully added",
                                 Toast.LENGTH_SHORT
                             ).show()
+                                loadingAlert.stopLoading()
                             val intent = Intent(applicationContext, ManageDeive::class.java)
                             startActivity(intent)
                             finish()
@@ -158,7 +169,7 @@ class AddDevice : AppCompatActivity() {
                                     "You don't have permission to add this device",
                                     Toast.LENGTH_SHORT
                                 ).show()
-
+                                loadingAlert.stopLoading()
                             }
                         } else {
                             Toast.makeText(
@@ -167,9 +178,11 @@ class AddDevice : AppCompatActivity() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             Toast.makeText(this@AddDevice, deviceId, Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                         }
                     } catch (e: IOException) {
                         throw RuntimeException(e)
+                        loadingAlert.stopLoading()
                     }
                 }
             }

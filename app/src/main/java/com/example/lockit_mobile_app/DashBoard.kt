@@ -37,6 +37,8 @@ class DashBoard : AppCompatActivity() {
     private lateinit var unlockButton: Button
     private lateinit var lockButton: Button
 
+    val loadingAlert = LoadingAlert(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.dashboard)
@@ -57,18 +59,18 @@ class DashBoard : AppCompatActivity() {
         // Retrieve username from SharedPreferences
         val sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
         val username = sharedPreferences.getString("username", "")
-        val ownerID = sharedPreferences.getLong("userId", 0L).toString()
+        val ownerID = sharedPreferences.getString("userId", "").toString()
 
 
         // Retrieve user details from SharedPreferences
         val sharedPreferencesDevice = getSharedPreferences("MyDevice", Context.MODE_PRIVATE)
-        val deviceID = sharedPreferencesDevice.getLong("deviceID", 0L)
+        val deviceID = sharedPreferencesDevice.getString("deviceID", "")
         val status = sharedPreferencesDevice.getBoolean("status", false)
 
 
 
         if (sharedPreferencesDevice.contains("deviceID")) {
-            getDevice(deviceID.toString(),ownerID)
+            getDevice(deviceID.toString(),ownerID.toString())
             lockIconBGTextview.visibility = View.VISIBLE
             if (status) {
                 unlockedIcon.visibility = View.GONE
@@ -106,29 +108,37 @@ class DashBoard : AppCompatActivity() {
 
         lockButton.setOnClickListener {
             val deviceid = deviceID.toString()
+
+            loadingAlert.startLoading()
+
             if (!isNetworkAvailable()) {
                 Toast.makeText(this@DashBoard, "No internet connection", Toast.LENGTH_SHORT).show()
+                loadingAlert.stopLoading()
                 return@setOnClickListener
             }
 
             if (deviceid.isEmpty()) {
                 Toast.makeText(this@DashBoard, "device Id is missing", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
+                loadingAlert.stopLoading()
             }
-            lock(deviceid)
+            lock(deviceid,ownerID)
         }
         unlockButton.setOnClickListener {
             val deviceid = deviceID.toString()
+            loadingAlert.startLoading()
             if (!isNetworkAvailable()) {
                 Toast.makeText(this@DashBoard, "No internet connection", Toast.LENGTH_SHORT).show()
+                loadingAlert.stopLoading()
                 return@setOnClickListener
             }
 
             if (deviceid.isEmpty()) {
                 Toast.makeText(this@DashBoard, "device Id is missing", Toast.LENGTH_SHORT).show()
+                loadingAlert.stopLoading()
                 return@setOnClickListener
             }
-            unlock(deviceid)
+            unlock(deviceid,ownerID)
         }
 
 
@@ -159,9 +169,10 @@ class DashBoard : AppCompatActivity() {
         return isConnected
     }
 
-    private fun lock(deviceid: String) {
-        val postURL = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/lock/$deviceid"
+    private fun lock(deviceid: String,ownerID: String) {
+        val postURL = "https://lockit-backend-api.onrender.com/api/devices/$deviceid/lock"
         val requestBody = FormBody.Builder()
+            .add("ownerID", ownerID)
             .build()
         val request = Request.Builder().url(postURL).post(requestBody).build()
 
@@ -171,7 +182,9 @@ class DashBoard : AppCompatActivity() {
                 runOnUiThread {
                     Toast.makeText(this@DashBoard, "Something went wrong", Toast.LENGTH_SHORT)
                         .show()
+                    loadingAlert.stopLoading()
                 }
+
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -183,6 +196,7 @@ class DashBoard : AppCompatActivity() {
                         if (jsonResponse.isNullOrEmpty()) {
                             Toast.makeText(this@DashBoard, "Empty response", Toast.LENGTH_SHORT)
                                 .show()
+                            loadingAlert.stopLoading()
                             return@runOnUiThread
                         }
 
@@ -201,6 +215,7 @@ class DashBoard : AppCompatActivity() {
                                 jsonObject.getString("message"),
                                 Toast.LENGTH_SHORT
                             ).show()
+                            loadingAlert.stopLoading()
                             val intent = Intent(applicationContext, DashBoard::class.java)
                             startActivity(intent)
                             finish()
@@ -217,6 +232,7 @@ class DashBoard : AppCompatActivity() {
                                     deviceid,
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                loadingAlert.stopLoading()
                             } else {
                                 // Message is present in the jsonObject
                                 Toast.makeText(
@@ -224,10 +240,12 @@ class DashBoard : AppCompatActivity() {
                                     jsonObject.getString("message"),
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                loadingAlert.stopLoading()
                             }
 
                         }
                     } catch (e: IOException) {
+                        loadingAlert.stopLoading()
                         throw RuntimeException(e)
                     }
                 }
@@ -235,9 +253,10 @@ class DashBoard : AppCompatActivity() {
         })
     }
 
-    private fun unlock(deviceid: String) {
-        val postURL = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/unlock/$deviceid"
+    private fun unlock(deviceid: String,ownerID: String) {
+        val postURL = "https://lockit-backend-api.onrender.com/api/devices/$deviceid/unlock"
         val requestBody = FormBody.Builder()
+            .add("ownerID", ownerID)
             .build()
         val request = Request.Builder().url(postURL).post(requestBody).build()
 
@@ -247,6 +266,7 @@ class DashBoard : AppCompatActivity() {
                 runOnUiThread {
                     Toast.makeText(this@DashBoard, "Something went wrong", Toast.LENGTH_SHORT)
                         .show()
+                    loadingAlert.stopLoading()
                 }
             }
 
@@ -259,6 +279,7 @@ class DashBoard : AppCompatActivity() {
                         if (jsonResponse.isNullOrEmpty()) {
                             Toast.makeText(this@DashBoard, "Empty response", Toast.LENGTH_SHORT)
                                 .show()
+                            loadingAlert.stopLoading()
                             return@runOnUiThread
                         }
 
@@ -277,6 +298,7 @@ class DashBoard : AppCompatActivity() {
                                 jsonObject.getString("message"),
                                 Toast.LENGTH_SHORT
                             ).show()
+                            loadingAlert.stopLoading()
                             val intent = Intent(applicationContext, DashBoard::class.java)
                             startActivity(intent)
                             finish()
@@ -293,6 +315,7 @@ class DashBoard : AppCompatActivity() {
                                     deviceid,
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                loadingAlert.stopLoading()
                             } else {
                                 // Message is present in the jsonObject
                                 Toast.makeText(
@@ -300,11 +323,13 @@ class DashBoard : AppCompatActivity() {
                                     jsonObject.getString("message"),
                                     Toast.LENGTH_SHORT
                                 ).show()
+                                loadingAlert.stopLoading()
                             }
 
                         }
                     } catch (e: IOException) {
                         throw RuntimeException(e)
+                        loadingAlert.stopLoading()
                     }
                 }
             }
@@ -313,9 +338,9 @@ class DashBoard : AppCompatActivity() {
 
     private fun getDevice(deviceId: String, ownerID: String) {
 
-        val postURL = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/device/$deviceId"
+        val getURL = "https://lockit-backend-api.onrender.com/api/devices/$deviceId"
 
-        val request = Request.Builder().url(postURL).get().build()
+        val request = Request.Builder().url(getURL).get().build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -323,6 +348,7 @@ class DashBoard : AppCompatActivity() {
                 runOnUiThread {
                     Toast.makeText(this@DashBoard, "Something went wrong", Toast.LENGTH_SHORT)
                         .show()
+                    loadingAlert.stopLoading()
                 }
             }
 
@@ -335,6 +361,7 @@ class DashBoard : AppCompatActivity() {
                         if (jsonResponse.isNullOrEmpty()) {
                             Toast.makeText(this@DashBoard, "Empty response", Toast.LENGTH_SHORT)
                                 .show()
+                            loadingAlert.stopLoading()
                             return@runOnUiThread
                         }
 
@@ -344,8 +371,8 @@ class DashBoard : AppCompatActivity() {
                         if (status) {
                             // If owner match is true, parse user details from response
                             val deviceObject = jsonObject.getJSONObject("device")
-                            val deviceId = deviceObject.getLong("deviceID")
-                            val ownerId = deviceObject.getLong("owner")
+                            val deviceId = deviceObject.getString("deviceID")
+                            val ownerId = deviceObject.getString("owner")
                             val state = deviceObject.getBoolean("status")
                             val active = deviceObject.getBoolean("active")
 
@@ -355,14 +382,17 @@ class DashBoard : AppCompatActivity() {
                                 val editor = sharedPreferences.edit()
 
                                 // Store new values in SharedPreferences
-                                editor.putLong("deviceID", deviceId)
-                                editor.putLong("owner", ownerId)
+                                editor.putString("deviceID", deviceId)
+                                editor.putString("owner", ownerId)
                                 editor.putBoolean("status", state)
                                 editor.putBoolean("active", active)
 
                                 // Apply changes
                                 editor.apply()
+
+                                loadingAlert.stopLoading()
                             }
+                            loadingAlert.stopLoading()
                         }else {
                             Toast.makeText(
                                 this@DashBoard,
@@ -370,9 +400,11 @@ class DashBoard : AppCompatActivity() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             Toast.makeText(this@DashBoard, deviceId, Toast.LENGTH_SHORT).show()
+                            loadingAlert.stopLoading()
                         }
                     } catch (e: IOException) {
                         throw RuntimeException(e)
+                        loadingAlert.stopLoading()
                     }
                 }
             }

@@ -38,7 +38,7 @@ class ManageDeive : AppCompatActivity() {
 
         val active = sharedPreferences.getBoolean("active", false)
         val status = sharedPreferences.getBoolean("status", false)
-        val deviceID = sharedPreferences.getLong("deviceID", 0L)
+        val deviceID = sharedPreferences.getString("deviceID", "")
 
 
         // Display deviceId in TextView

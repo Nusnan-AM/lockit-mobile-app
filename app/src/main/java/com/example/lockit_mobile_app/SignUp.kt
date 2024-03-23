@@ -40,9 +40,9 @@ class SignUp : AppCompatActivity()  {
 
     private lateinit var login: TextView
 
-    private val postURL: String = "http://10.0.2.2:5001/lockit-332b1/us-central1/app/register"
-//    private val getURL: String = "https://reqres.in/api/users"
+    private val postURL: String = "https://lockit-backend-api.onrender.com/api/users/register"
 
+    val loadingAlert = LoadingAlert(this)
 
      @SuppressLint("WrongViewCast", "MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,7 +132,7 @@ class SignUp : AppCompatActivity()  {
 
                 return@setOnClickListener
             }
-
+            loadingAlert.startLoading()
             signup(username, email, phoneNumber, password)
         }
 
@@ -178,14 +178,13 @@ class SignUp : AppCompatActivity()  {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
                 runOnUiThread {
-                    loading.visibility = View.GONE
+                    loadingAlert.stopLoading()
                     Toast.makeText(this@SignUp, "Something went wrong", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 runOnUiThread {
-                    loading.visibility = View.GONE
                     try {
                         val jsonResponse = response.body?.string()
                         Log.d("Response", jsonResponse ?: "Empty response")
@@ -194,11 +193,13 @@ class SignUp : AppCompatActivity()  {
                         val jsonObject = JSONObject(jsonResponse)
 
                         Toast.makeText(this@SignUp,jsonObject.getString("message"), Toast.LENGTH_SHORT).show()
+                        loadingAlert.stopLoading()
                         val intent = Intent(applicationContext,Login::class.java)
                         startActivity(intent)
                         finish()
                     } catch (e: IOException) {
                         throw RuntimeException(e)
+                        loadingAlert.stopLoading()
                     }
                 }
             }

@@ -212,7 +212,7 @@
         android:layout_height="147dp"
         android:background="@drawable/rounderdsq"
         android:elevation="10dp"
-        android:hint="Alerts"
+        android:hint="FAQ"
         android:maxLines="2"
         android:textAlignment="center"
         android:gravity="center_vertical"

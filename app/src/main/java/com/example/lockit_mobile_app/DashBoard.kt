@@ -100,6 +100,12 @@ class DashBoard : AppCompatActivity() {
             finish()
         }
 
+        alertsPage.setOnClickListener{
+            val intent = Intent(applicationContext,Faq::class.java)
+            startActivity(intent)
+            finish()
+            }
+
         helpPage.setOnClickListener{
             val intent = Intent(applicationContext,Chat::class.java)
             startActivity(intent)

@@ -83,14 +83,14 @@ class Chat : AppCompatActivity() {
         val jsonBody = JSONObject().apply {
             put("model", "gpt-3.5-turbo-instruct")
             put("prompt", question)
-            put("max_tokens", 400)
+            put("max_tokens", 800)
             put("temperature", 0)
         }
         val body = RequestBody.create(JSON, jsonBody.toString())
         val request = Request.Builder()
             .url("https://api.openai.com/v1/completions")
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer RELPACE_OPEN_AI_WITH_API_KEY")
+            .header("Authorization", "Bearer RELPACE_API_KEY")//RELPACE_OPEN_AI_WITH_API_KEY
             .post(body)
             .build()
 

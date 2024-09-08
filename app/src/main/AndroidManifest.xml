@@ -17,28 +17,31 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".FAQ"
+            android:exported="false" />
+        <activity
             android:name=".ManageDeive"
             android:exported="false" />
         <activity
             android:name=".PasswordEdite"
             android:exported="false"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".Chat"
             android:exported="true"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".EditProfile"
             android:exported="false"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".Profile"
             android:exported="false"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".AddDevice"
             android:exported="false"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".Login"
             android:exported="true"
@@ -52,9 +55,13 @@
         <activity
             android:name=".DashBoard"
             android:exported="false"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".SignUp"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".SignUp"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".Faq"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>
